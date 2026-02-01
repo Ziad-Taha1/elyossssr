@@ -163,10 +163,15 @@ function Store({ products, onAdd }: { products: Product[], onAdd: (p: Product) =
 
 function Admin({ products, setProducts, onLogout }: { products: Product[], setProducts: (p: Product[]) => void, onLogout: () => void }) {
   const [form, setForm] = useState({ name: '', price: '', category: 'أخرى', image: '' });
+  const [exportJson, setExportJson] = useState('');
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault(); if(!form.name) return;
     setProducts([{ ...form, id: Date.now().toString(), price: Number(form.price), description: '', image: form.image || 'https://picsum.photos/400' }, ...products]);
     setForm({ name: '', price: '', category: 'أخرى', image: '' });
+  };
+
+  const handleExport = () => {
+    setExportJson(JSON.stringify(products, null, 2));
   };
 
   const totalProducts = products.length;
@@ -237,6 +242,10 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
           </select>
           <input placeholder="رابط الصورة (URL)" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.image} onChange={e => setForm({...form, image: e.target.value})} />
           <button onClick={handleAdd} className="w-full py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition">حفظ</button>
+          <button onClick={handleExport} className="w-full py-3 bg-green-600 text-white font-black rounded-xl hover:bg-green-700 transition">تصدير المنتجات (JSON)</button>
+          {exportJson && (
+            <textarea className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" rows={10} value={exportJson} readOnly />
+          )}
           <button onClick={onLogout} className="w-full text-red-500 text-xs font-bold hover:text-red-600 transition">تسجيل خروج</button>
         </div>
         <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm">
