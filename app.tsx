@@ -298,6 +298,14 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
         <QRCodeCanvas value="https://ziad-taha1.github.io/elyossssr/" size={128} />
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">امسح الرمز للوصول إلى الموقع</p>
       </div>
+
+      {/* Firebase Console Link */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm text-center">
+        <h2 className="font-black text-xl mb-4 dark:text-white">إدارة البيانات العالمية</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">لتعديل المنتجات عالمياً، اذهب إلى Firebase Console</p>
+        <a href="https://console.firebase.google.com/project/YOUR_PROJECT_ID/firestore/data" target="_blank" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">افتح Firebase Console</a>
+        <p className="text-xs text-gray-500 mt-2">استبدل YOUR_PROJECT_ID بمعرف مشروعك</p>
+      </div>
     </div>
   );
 }
