@@ -21,11 +21,21 @@ export default function App() {
   
   const [products, setProducts] = useState<Product[]>(() => {
     const s = localStorage.getItem('yosr_p');
-    return s ? JSON.parse(s) : [
-      { id: '1', name: 'أرز فاخر المطبخ 1كجم', price: 35, category: 'بقوليات', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400', description: 'أرز منقى' },
-      { id: '2', name: 'زيت ممتاز 700مل', price: 65, category: 'زيوت', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400', description: 'زيت نقي' }
-    ];
+    return s ? JSON.parse(s) : [];
   });
+
+  // Load products from JSON if not in localStorage
+  useEffect(() => {
+    if (products.length === 0) {
+      fetch('/products.json')
+        .then(res => res.json())
+        .then(data => {
+          setProducts(data);
+          localStorage.setItem('yosr_p', JSON.stringify(data));
+        })
+        .catch(err => console.log('Error loading products:', err));
+    }
+  }, [products.length]);
   
   const [cart, setCart] = useState<CartItem[]>(() => {
     const s = localStorage.getItem('yosr_c');
@@ -168,6 +178,10 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
 
   return (
     <div className="space-y-8">
+      {/* Warning */}
+      <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 text-yellow-700 dark:text-yellow-200 px-4 py-3 rounded-lg">
+        <strong>تحذير:</strong> التعديلات هنا محلية. لجعلها عالمية، قم بتعديل ملف products.json في المستودع وأعد النشر.
+      </div>
       {/* Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg">
