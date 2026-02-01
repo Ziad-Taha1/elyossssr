@@ -95,7 +95,7 @@ export default function App() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {view === 'store' ? (
-          <Store products={products} onAdd={addToCart} whatsapp={whatsapp} />
+          <Store products={products} onAdd={addToCart} />
         ) : (
           !isAdminAuth ? (
             <div className="max-w-md mx-auto mt-10 p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-xl text-center">
@@ -124,7 +124,7 @@ export default function App() {
 }
 
 // --- Sub Components ---
-function Store({ products, onAdd, whatsapp }: { products: Product[], onAdd: (p: Product) => void, whatsapp: string }) {
+function Store({ products, onAdd }: { products: Product[], onAdd: (p: Product) => void }) {
   const [cat, setCat] = useState('الكل');
   const filtered = products.filter(p => cat === 'الكل' || p.category === cat);
   return (
@@ -145,12 +145,6 @@ function Store({ products, onAdd, whatsapp }: { products: Product[], onAdd: (p: 
             </div>
           </div>
         ))}
-      </div>
-      {/* QR Code for WhatsApp Ordering */}
-      <div className="mt-8 text-center">
-        <h3 className="text-lg font-bold mb-4 dark:text-white">اطلب عبر واتساب</h3>
-        <QRCodeCanvas value={`https://wa.me/${whatsapp}?text=مرحباً، أريد الطلب من ماركت اليسر`} size={128} />
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">امسح الرمز للطلب مباشرة</p>
       </div>
     </div>
   );
@@ -246,6 +240,13 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* QR Code for WhatsApp Ordering */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm text-center">
+        <h2 className="font-black text-xl mb-4 dark:text-white">رمز الطلب عبر واتساب</h2>
+        <QRCodeCanvas value="https://ziad-taha1.github.io/elyossssr/" size={128} />
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">امسح الرمز للوصول إلى الموقع</p>
       </div>
     </div>
   );
