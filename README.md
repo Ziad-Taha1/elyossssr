@@ -25,9 +25,9 @@ A modern, responsive e-commerce market application built with React, TypeScript,
 - QR code for WhatsApp contact
 
 ### 🌐 Global Data Management
-- Firebase Firestore for real-time database
-- Fallback to localStorage if Firebase not configured
-- Automatic synchronization across users
+- localStorage for persistent data storage
+- Data syncs across browser sessions on the same device
+- No backend required - works immediately
 
 ### 🎨 UI/UX
 - Tailwind CSS for styling
@@ -41,7 +41,7 @@ A modern, responsive e-commerce market application built with React, TypeScript,
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
-- **Database**: Firebase Firestore
+- **Storage**: Browser localStorage
 - **QR Codes**: QRCode React
 - **Deployment**: GitHub Pages
 
@@ -64,35 +64,6 @@ A modern, responsive e-commerce market application built with React, TypeScript,
    ```
 
 4. Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-## Firebase Setup (For Global Data)
-
-1. Create a Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/)
-
-2. Enable Firestore Database:
-   - Go to Firestore Database
-   - Click "Create database"
-   - Choose "Start in test mode"
-
-3. Create a web app:
-   - Go to Project settings > General > Your apps
-   - Click "Add app" and select Web
-   - Copy the Firebase config object
-
-4. Update `app.tsx`:
-   - Replace the `firebaseConfig` object with your actual config
-   - The config is at the top of the file (lines 7-15)
-
-5. Create "products" collection in Firestore and add sample documents:
-   ```json
-   {
-     "name": "Premium Rice 1kg",
-     "price": 35,
-     "category": "Pulses",
-     "image": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400",
-     "description": "Purified rice"
-   }
-   ```
 
 ## Usage
 
