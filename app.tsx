@@ -4,21 +4,12 @@ import {
   X, MessageCircle, Sun, Moon, Package, Wallet, Settings, CheckCircle2 
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { createClient } from '@supabase/supabase-js';
 
-// Firebase config - Replace with your own
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Supabase config - Replace with your own
+const supabaseUrl = 'YOUR_SUPABASE_URL';
+const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Types ---
 interface Product { id: string; name: string; price: number; category: string; image: string; description: string; }
@@ -36,29 +27,30 @@ export default function App() {
   
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Load products from Firestore or localStorage
+  // Load products from Supabase or localStorage
   useEffect(() => {
-    try {
-      const unsubscribe = onSnapshot(collection(db, 'products'), (querySnapshot) => {
-        const productsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-        setProducts(productsData);
-        localStorage.setItem('yosr_p', JSON.stringify(productsData));
-      });
-      return unsubscribe;
-    } catch (error) {
-      console.log('Firebase not configured, using localStorage');
-      const s = localStorage.getItem('yosr_p');
-      const defaultProducts = [
-        { id: '1', name: 'أرز فاخر المطبخ 1كجم', price: 35, category: 'بقوليات', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400', description: 'أرز منقى' },
-        { id: '2', name: 'زيت ممتاز 700مل', price: 65, category: 'زيوت', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400', description: 'زيت نقي' }
-      ];
-      if (s) {
-        setProducts(JSON.parse(s));
-      } else {
-        setProducts(defaultProducts);
-        localStorage.setItem('yosr_p', JSON.stringify(defaultProducts));
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        setProducts(data);
+        localStorage.setItem('yosr_p', JSON.stringify(data));
+      } catch (error) {
+        console.log('Supabase not configured, using localStorage');
+        const s = localStorage.getItem('yosr_p');
+        const defaultProducts = [
+          { id: '1', name: 'أرز فاخر المطبخ 1كجم', price: 35, category: 'بقوليات', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400', description: 'أرز منقى' },
+          { id: '2', name: 'زيت ممتاز 700مل', price: 65, category: 'زيوت', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400', description: 'زيت نقي' }
+        ];
+        if (s) {
+          setProducts(JSON.parse(s));
+        } else {
+          setProducts(defaultProducts);
+          localStorage.setItem('yosr_p', JSON.stringify(defaultProducts));
+        }
       }
-    }
+    };
+    fetchProducts();
   }, []);
   
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -191,9 +183,11 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
     e.preventDefault(); if(!form.name) return;
     const newProduct = { ...form, price: Number(form.price), description: '' };
     try {
-      await addDoc(collection(db, 'products'), newProduct);
+      const { data, error } = await supabase.from('products').insert([newProduct]).select();
+      if (error) throw error;
+      setProducts([...products, data[0]]);
     } catch (error) {
-      console.log('Firebase not configured, saving locally');
+      console.log('Supabase not configured, saving locally');
       setProducts([{ ...newProduct, id: Date.now().toString() }, ...products]);
       localStorage.setItem('yosr_p', JSON.stringify([{ ...newProduct, id: Date.now().toString() }, ...products]));
     }
@@ -277,7 +271,7 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
                   <td className="p-4 text-sm font-bold">{p.name}</td>
                   <td className="p-4 text-center font-black">{p.price} ج.م</td>
                   <td className="p-4 text-center">{p.category}</td>
-                  <td className="p-4 text-center"><button onClick={async () => { try { await deleteDoc(doc(db, 'products', p.id)); } catch (error) { console.log('Firebase not configured, deleting locally'); setProducts(products.filter((x: Product)=>x.id!==p.id)); localStorage.setItem('yosr_p', JSON.stringify(products.filter((x: Product)=>x.id!==p.id))); } }} className="text-red-400 hover:text-red-600 transition"><Trash2 size={18} /></button></td>
+                  <td className="p-4 text-center"><button onClick={async () => { try { const { error } = await supabase.from('products').delete().eq('id', p.id); if (error) throw error; setProducts(products.filter((x: Product)=>x.id!==p.id)); } catch (error) { console.log('Supabase not configured, deleting locally'); setProducts(products.filter((x: Product)=>x.id!==p.id)); localStorage.setItem('yosr_p', JSON.stringify(products.filter((x: Product)=>x.id!==p.id))); } }} className="text-red-400 hover:text-red-600 transition"><Trash2 size={18} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -303,8 +297,8 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
       <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm text-center">
         <h2 className="font-black text-xl mb-4 dark:text-white">إدارة البيانات العالمية</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">لتعديل المنتجات عالمياً، اذهب إلى Firebase Console</p>
-        <a href="https://console.firebase.google.com/project/YOUR_PROJECT_ID/firestore/data" target="_blank" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">افتح Firebase Console</a>
-        <p className="text-xs text-gray-500 mt-2">استبدل YOUR_PROJECT_ID بمعرف مشروعك</p>
+        <a href="https://supabase.com/dashboard/project/YOUR_PROJECT_REF" target="_blank" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">افتح Supabase Dashboard</a>
+        <p className="text-xs text-gray-500 mt-2">استبدل YOUR_PROJECT_REF بمرجع مشروعك</p>
       </div>
     </div>
   );
