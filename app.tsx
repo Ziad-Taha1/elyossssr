@@ -48,7 +48,16 @@ export default function App() {
     } catch (error) {
       console.log('Firebase not configured, using localStorage');
       const s = localStorage.getItem('yosr_p');
-      if (s) setProducts(JSON.parse(s));
+      const defaultProducts = [
+        { id: '1', name: 'أرز فاخر المطبخ 1كجم', price: 35, category: 'بقوليات', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400', description: 'أرز منقى' },
+        { id: '2', name: 'زيت ممتاز 700مل', price: 65, category: 'زيوت', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400', description: 'زيت نقي' }
+      ];
+      if (s) {
+        setProducts(JSON.parse(s));
+      } else {
+        setProducts(defaultProducts);
+        localStorage.setItem('yosr_p', JSON.stringify(defaultProducts));
+      }
     }
   }, []);
   
