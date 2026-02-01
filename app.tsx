@@ -4,6 +4,21 @@ import {
   X, MessageCircle, Sun, Moon, Package, Wallet, Settings, CheckCircle2 
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+
+// Firebase config - Replace with your own
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // --- Types ---
 interface Product { id: string; name: string; price: number; category: string; image: string; description: string; }
@@ -19,23 +34,23 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [isCartOpen, setIsCartOpen] = useState(false);
   
-  const [products, setProducts] = useState<Product[]>(() => {
-    const s = localStorage.getItem('yosr_p');
-    return s ? JSON.parse(s) : [];
-  });
+  const [products, setProducts] = useState<Product[]>([]);
 
-  // Load products from JSON if not in localStorage
+  // Load products from Firestore or localStorage
   useEffect(() => {
-    if (products.length === 0) {
-      fetch('/products.json')
-        .then(res => res.json())
-        .then(data => {
-          setProducts(data);
-          localStorage.setItem('yosr_p', JSON.stringify(data));
-        })
-        .catch(err => console.log('Error loading products:', err));
+    try {
+      const unsubscribe = onSnapshot(collection(db, 'products'), (querySnapshot) => {
+        const productsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        setProducts(productsData);
+        localStorage.setItem('yosr_p', JSON.stringify(productsData));
+      });
+      return unsubscribe;
+    } catch (error) {
+      console.log('Firebase not configured, using localStorage');
+      const s = localStorage.getItem('yosr_p');
+      if (s) setProducts(JSON.parse(s));
     }
-  }, [products.length]);
+  }, []);
   
   const [cart, setCart] = useState<CartItem[]>(() => {
     const s = localStorage.getItem('yosr_c');
@@ -163,15 +178,17 @@ function Store({ products, onAdd }: { products: Product[], onAdd: (p: Product) =
 
 function Admin({ products, setProducts, onLogout }: { products: Product[], setProducts: (p: Product[]) => void, onLogout: () => void }) {
   const [form, setForm] = useState({ name: '', price: '', category: 'أخرى', image: '' });
-  const [exportJson, setExportJson] = useState('');
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault(); if(!form.name) return;
-    setProducts([{ ...form, id: Date.now().toString(), price: Number(form.price), description: '', image: form.image || 'https://picsum.photos/400' }, ...products]);
+    const newProduct = { ...form, price: Number(form.price), description: '' };
+    try {
+      await addDoc(collection(db, 'products'), newProduct);
+    } catch (error) {
+      console.log('Firebase not configured, saving locally');
+      setProducts([{ ...newProduct, id: Date.now().toString() }, ...products]);
+      localStorage.setItem('yosr_p', JSON.stringify([{ ...newProduct, id: Date.now().toString() }, ...products]));
+    }
     setForm({ name: '', price: '', category: 'أخرى', image: '' });
-  };
-
-  const handleExport = () => {
-    setExportJson(JSON.stringify(products, null, 2));
   };
 
   const totalProducts = products.length;
@@ -183,10 +200,6 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
 
   return (
     <div className="space-y-8">
-      {/* Warning */}
-      <div className="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 text-yellow-700 dark:text-yellow-200 px-4 py-3 rounded-lg">
-        <strong>تحذير:</strong> التعديلات هنا محلية. لجعلها عالمية، قم بتعديل ملف products.json في المستودع وأعد النشر.
-      </div>
       {/* Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg">
@@ -242,10 +255,6 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
           </select>
           <input placeholder="رابط الصورة (URL)" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.image} onChange={e => setForm({...form, image: e.target.value})} />
           <button onClick={handleAdd} className="w-full py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition">حفظ</button>
-          <button onClick={handleExport} className="w-full py-3 bg-green-600 text-white font-black rounded-xl hover:bg-green-700 transition">تصدير المنتجات (JSON)</button>
-          {exportJson && (
-            <textarea className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" rows={10} value={exportJson} readOnly />
-          )}
           <button onClick={onLogout} className="w-full text-red-500 text-xs font-bold hover:text-red-600 transition">تسجيل خروج</button>
         </div>
         <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm">
@@ -259,7 +268,7 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
                   <td className="p-4 text-sm font-bold">{p.name}</td>
                   <td className="p-4 text-center font-black">{p.price} ج.م</td>
                   <td className="p-4 text-center">{p.category}</td>
-                  <td className="p-4 text-center"><button onClick={() => setProducts(products.filter((x: Product)=>x.id!==p.id))} className="text-red-400 hover:text-red-600 transition"><Trash2 size={18} /></button></td>
+                  <td className="p-4 text-center"><button onClick={async () => { try { await deleteDoc(doc(db, 'products', p.id)); } catch (error) { console.log('Firebase not configured, deleting locally'); setProducts(products.filter((x: Product)=>x.id!==p.id)); localStorage.setItem('yosr_p', JSON.stringify(products.filter((x: Product)=>x.id!==p.id))); } }} className="text-red-400 hover:text-red-600 transition"><Trash2 size={18} /></button></td>
                 </tr>
               ))}
             </tbody>
