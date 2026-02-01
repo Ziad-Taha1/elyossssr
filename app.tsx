@@ -101,7 +101,7 @@ export default function App() {
             <div className="max-w-md mx-auto mt-10 p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-xl text-center">
               <Lock className="mx-auto mb-4 text-amber-500" size={40} />
               <h2 className="text-xl font-black mb-6 dark:text-white">دخول الإدارة</h2>
-              <input type="password" placeholder="كلمة السر" className="w-full p-4 rounded-xl border dark:bg-gray-900 mb-4 text-center font-bold" value={passInput} onChange={e => {setPassInput(e.target.value); if(e.target.value === '123456') setIsAdminAuth(true);}} />
+              <input type="password" placeholder="كلمة السر" className="w-full p-4 rounded-xl border dark:bg-gray-900 mb-4 text-center font-bold" value={passInput} onChange={e => {setPassInput(e.target.value); if(e.target.value === '678910') setIsAdminAuth(true);}} />
               <p className="text-[10px] text-gray-400 italic">اكتب كلمة السر الخاصة بالادارة</p>
             </div>
           ) : (
