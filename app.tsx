@@ -220,6 +220,7 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
           <select className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
+          <input placeholder="رابط الصورة (URL)" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.image} onChange={e => setForm({...form, image: e.target.value})} />
           <button onClick={handleAdd} className="w-full py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition">حفظ</button>
           <button onClick={onLogout} className="w-full text-red-500 text-xs font-bold hover:text-red-600 transition">تسجيل خروج</button>
         </div>
