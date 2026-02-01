@@ -1,0 +1,374 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ماركت اليسر - El Yosr Market</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        yosr: { green: '#065f46', orange: '#f59e0b', bg: '#f8fafc', soft: '#f0fdf4' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; color: #1e293b; transition: all 0.3s ease; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); }
+        .product-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-transition { transition: all 0.5s ease-in-out; }
+        input, select, textarea { outline: none !important; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icon = ({ name, size = 24, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        const App = () => {
+            const [view, setView] = useState('store'); // store or admin
+            const [isAdminAuthed, setIsAdminAuthed] = useState(false);
+            const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('yosr_cart') || '[]'));
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            
+            // البيانات - تقدر تغيرها من هنا أونلاين وهتتحدث فوراً
+            const [products, setProducts] = useState(() => {
+                const saved = localStorage.getItem('yosr_products');
+                return saved ? JSON.parse(saved) : [
+                    { id: 1, name: 'أرز فاخر المطبخ 1كجم', price: 35, category: 'بقوليات', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400' },
+                    { id: 2, name: 'زيت هلا عباد شمس 700مل', price: 65, category: 'زيوت', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400' },
+                    { id: 3, name: 'مكرونة حواء الملكة 400جم', price: 15, category: 'مكرونة', image: 'https://images.unsplash.com/photo-1551462147-37885acc3c41?w=400' }
+                ];
+            });
+
+            const [settings, setSettings] = useState(() => JSON.parse(localStorage.getItem('yosr_settings') || '{"whatsapp": "201012345678"}'));
+
+            useEffect(() => { localStorage.setItem('yosr_products', JSON.stringify(products)); }, [products]);
+            useEffect(() => { localStorage.setItem('yosr_cart', JSON.stringify(cart)); }, [cart]);
+            useEffect(() => { localStorage.setItem('yosr_settings', JSON.stringify(settings)); }, [settings]);
+
+            const addToCart = (p) => {
+                setCart(prev => {
+                    const exist = prev.find(item => item.id === p.id);
+                    if (exist) return prev.map(item => item.id === p.id ? {...item, qty: item.qty + 1} : item);
+                    return [...prev, {...p, qty: 1}];
+                });
+            };
+
+            const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
+            const updateQty = (id, delta) => setCart(prev => prev.map(i => i.id === id ? {...i, qty: Math.max(1, i.qty + delta)} : i));
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Header الهيدر الذكي */}
+                    <header className={`sticky top-0 z-50 glass border-b transition-colors duration-500 ${view === 'admin' ? 'bg-slate-900 border-slate-700' : 'bg-white/80 border-gray-100'}`}>
+                        <div className="max-w-6xl mx-auto px-4 h-20 flex justify-between items-center">
+                            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setView('store')}>
+                                <div className={`p-2.5 rounded-2xl shadow-lg transition-transform group-hover:rotate-12 ${view === 'admin' ? 'bg-amber-500' : 'bg-yosr-green'}`}>
+                                    <Icon name="shopping-basket" className="text-white" />
+                                </div>
+                                <div>
+                                    <h1 className={`text-xl font-black ${view === 'admin' ? 'text-white' : 'text-yosr-green'}`}>ماركت اليسر</h1>
+                                    <p className={`text-[10px] font-bold tracking-widest ${view === 'admin' ? 'text-amber-200' : 'text-gray-400'}`}>EL YOSR MARKET</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {view === 'store' && (
+                                    <button onClick={() => setIsCartOpen(true)} className="relative p-3 bg-yosr-soft text-yosr-green rounded-2xl hover:bg-yosr-green hover:text-white transition-all shadow-sm">
+                                        <Icon name="shopping-cart" size={20} />
+                                        {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-yosr-orange text-white text-[10px] px-1.5 py-0.5 rounded-full ring-2 ring-white font-bold">{cart.length}</span>}
+                                    </button>
+                                )}
+                                <button 
+                                    onClick={() => setView(view === 'store' ? 'admin' : 'store')} 
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${view === 'admin' ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                >
+                                    <Icon name={view === 'store' ? "settings" : "store"} size={16} />
+                                    <span>{view === 'store' ? 'الإدارة' : 'المتجر'}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
+                        {view === 'store' ? (
+                            <StoreView products={products} onAdd={addToCart} />
+                        ) : (
+                            <AdminView 
+                                products={products} 
+                                setProducts={setProducts} 
+                                settings={settings} 
+                                setSettings={setSettings} 
+                                isAuthed={isAdminAuthed} 
+                                setIsAuthed={setIsAdminAuthed} 
+                            />
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="py-8 text-center opacity-40 text-xs font-bold">
+                        &copy; {new Date().getFullYear()} ماركت اليسر - جميع الحقوق محفوظة
+                    </footer>
+
+                    {/* Cart Drawer */}
+                    {isCartOpen && <CartDrawer cart={cart} onClose={() => setIsCartOpen(false)} onUpdate={updateQty} onRemove={removeFromCart} settings={settings} clearCart={() => setCart([])} />}
+                </div>
+            );
+        };
+
+        const StoreView = ({ products, onAdd }) => {
+            const [search, setSearch] = useState('');
+            const filtered = products.filter(p => p.name.includes(search));
+
+            return (
+                <div className="space-y-8 animate-in fade-in duration-500">
+                    {/* Search Bar */}
+                    <div className="max-w-xl mx-auto relative group">
+                        <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
+                            <Icon name="search" size={18} />
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="بتدور على إيه النهاردة؟" 
+                            className="w-full pr-12 pl-6 py-4 rounded-3xl bg-white border border-gray-100 shadow-xl shadow-gray-200/50 focus:border-yosr-green transition-all font-bold text-sm"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Products Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                        {filtered.map(p => (
+                            <div key={p.id} className="product-card bg-white rounded-[2.5rem] p-3 border border-gray-100 shadow-sm flex flex-col">
+                                <div className="relative aspect-square rounded-[2rem] overflow-hidden bg-gray-50 mb-4">
+                                    <img src={p.image} className="w-full h-full object-cover" />
+                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black text-yosr-green shadow-sm">{p.category}</div>
+                                </div>
+                                <div className="px-2 flex-1 flex flex-col justify-between">
+                                    <h3 className="font-bold text-sm text-slate-700 h-10 overflow-hidden mb-2 leading-tight">{p.name}</h3>
+                                    <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-50">
+                                        <div className="flex flex-col">
+                                            <span className="text-lg font-black text-yosr-green">{p.price} <small className="text-[10px]">ج.م</small></span>
+                                        </div>
+                                        <button onClick={() => onAdd(p)} className="bg-yosr-green text-white p-2.5 rounded-2xl hover:bg-yosr-orange transition-all shadow-md active:scale-90">
+                                            <Icon name="plus" size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminView = ({ products, setProducts, settings, setSettings, isAuthed, setIsAuthed }) => {
+            const [pass, setPass] = useState('');
+            const [newItem, setNewItem] = useState({ name: '', price: '', category: 'عام', image: '' });
+
+            if (!isAuthed) {
+                return (
+                    <div className="max-w-md mx-auto bg-white p-10 rounded-[3rem] shadow-2xl text-center space-y-6 border border-gray-50 mt-12">
+                        <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center mx-auto text-amber-500">
+                            <Icon name="lock" size={40} />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-800">خزنة الإدارة</h2>
+                            <p className="text-gray-400 text-sm mt-1">برجاء إدخال كلمة السر للمتابعة</p>
+                        </div>
+                        <input 
+                            type="password" 
+                            className="w-full p-4 rounded-2xl border bg-gray-50 text-center text-xl tracking-[0.3em] font-bold focus:border-amber-500 transition-all"
+                            placeholder="••••••"
+                            onChange={(e) => e.target.value === '123456' && setIsAuthed(true)}
+                        />
+                        <p className="text-[10px] text-gray-300">كلمة السر الافتراضية: 123456</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-8 animate-in slide-in-from-bottom-5 duration-500">
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-3xl font-black text-slate-800">لوحة التحكم</h2>
+                        <button onClick={() => setIsAuthed(false)} className="text-xs font-bold text-red-400 hover:underline">تسجيل الخروج</button>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {/* Add Form */}
+                        <div className="md:col-span-1 space-y-6">
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-50">
+                                <h3 className="font-black text-lg mb-6 flex items-center gap-2"><Icon name="plus-circle" className="text-amber-500"/> إضافة منتج</h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-400 px-2">اسم المنتج</label>
+                                        <input className="w-full p-4 rounded-2xl bg-gray-50 border-none font-bold text-sm" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} placeholder="مثال: أرز 1كجم" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-400 px-2">السعر</label>
+                                        <input type="number" className="w-full p-4 rounded-2xl bg-gray-50 border-none font-bold text-sm" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} placeholder="00" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-400 px-2">القسم</label>
+                                        <select className="w-full p-4 rounded-2xl bg-gray-50 border-none font-bold text-sm appearance-none" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
+                                            <option>عام</option><option>بقوليات</option><option>زيوت</option><option>مكرونة</option><option>ألبان</option><option>منظفات</option>
+                                        </select>
+                                    </div>
+                                    <button onClick={() => {
+                                        if(!newItem.name || !newItem.price) return alert('أكمل البيانات');
+                                        setProducts([{...newItem, id: Date.now(), price: Number(newItem.price), image: newItem.image || 'https://picsum.photos/seed/'+Date.now()+'/400/400'}, ...products]);
+                                        setNewItem({ name: '', price: '', category: 'عام', image: '' });
+                                    }} className="w-full bg-slate-900 text-white p-4 rounded-2xl font-black shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all">حفظ المنتج</button>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50">
+                                <h3 className="font-black text-sm mb-4 flex items-center gap-2"><Icon name="phone" className="text-yosr-green"/> رقم الواتساب</h3>
+                                <input className="w-full p-4 rounded-2xl bg-gray-50 border-none font-bold text-left" dir="ltr" value={settings.whatsapp} onChange={e => setSettings({whatsapp: e.target.value})} />
+                            </div>
+                        </div>
+
+                        {/* List */}
+                        <div className="md:col-span-2 bg-white rounded-[2.5rem] shadow-sm border border-gray-50 overflow-hidden">
+                            <div className="p-6 border-b border-gray-50 flex justify-between items-center">
+                                <h3 className="font-black">قائمة المخزن</h3>
+                                <span className="text-xs bg-yosr-soft text-yosr-green px-3 py-1 rounded-full font-bold">{products.length} منتج</span>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-right">
+                                    <thead className="bg-gray-50/50 text-gray-400 text-[10px] font-black uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">المنتج</th>
+                                            <th className="px-6 py-4 text-center">السعر</th>
+                                            <th className="px-6 py-4 text-center">إجراء</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {products.map(p => (
+                                            <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-6 py-4 flex items-center gap-3">
+                                                    <img src={p.image} className="w-10 h-10 rounded-xl object-cover" />
+                                                    <span className="font-bold text-sm text-slate-700">{p.name}</span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center font-black text-yosr-green text-sm">{p.price} ج.م</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button onClick={() => setProducts(products.filter(x => x.id !== p.id))} className="p-2 text-red-200 hover:text-red-500 transition-all">
+                                                        <Icon name="trash-2" size={18}/>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CartDrawer = ({ cart, onClose, onUpdate, onRemove, settings, clearCart }) => {
+            const [info, setInfo] = useState({ name: '', address: '' });
+            const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+
+            const sendOrder = () => {
+                if(!info.name || !info.address) return alert('برجاء كتابة الاسم والعنوان');
+                const text = `📦 *طلب جديد من ماركت اليسر*\n\n` + 
+                    `👤 العميل: ${info.name}\n📍 العنوان: ${info.address}\n\n` +
+                    cart.map(i => `• ${i.name} (العدد: ${i.qty})`).join('\n') +
+                    `\n\n💰 الإجمالي: *${total} ج.م*`;
+                window.open(`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(text)}`);
+                clearCart();
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 z-[100] flex justify-end">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
+                    <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-500">
+                        <div className="p-8 border-b flex justify-between items-center">
+                            <h2 className="text-2xl font-black text-yosr-green">طلباتك</h2>
+                            <button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-all"><Icon name="x" size={24}/></button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+                            {cart.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center opacity-20">
+                                    <Icon name="shopping-bag" size={80} />
+                                    <p className="font-bold mt-4">السلة فاضية.. املأها بالخير!</p>
+                                </div>
+                            ) : cart.map(item => (
+                                <div key={item.id} className="flex gap-4 items-center bg-gray-50/50 p-4 rounded-3xl border border-gray-50">
+                                    <img src={item.image} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-xs text-slate-800 line-clamp-1">{item.name}</h4>
+                                        <p className="text-yosr-green font-black text-sm">{item.price} ج.م</p>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-2xl shadow-sm border border-gray-100">
+                                        <button onClick={() => onUpdate(item.id, -1)} className="text-gray-300 hover:text-yosr-green"><Icon name="minus" size={14}/></button>
+                                        <span className="font-black text-sm w-4 text-center">{item.qty}</span>
+                                        <button onClick={() => onUpdate(item.id, 1)} className="text-yosr-green hover:text-yosr-orange"><Icon name="plus" size={14}/></button>
+                                    </div>
+                                    <button onClick={() => onRemove(item.id)} className="text-red-200 hover:text-red-500"><Icon name="trash-2" size={18}/></button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {cart.length > 0 && (
+                            <div className="p-8 bg-gray-50/50 border-t space-y-4">
+                                <div className="space-y-3">
+                                    <input placeholder="اسمك الكريم" className="w-full p-4 rounded-2xl border-none shadow-sm font-bold text-sm" onChange={e => setInfo({...info, name: e.target.value})} />
+                                    <input placeholder="العنوان بالتفصيل" className="w-full p-4 rounded-2xl border-none shadow-sm font-bold text-sm" onChange={e => setInfo({...info, address: e.target.value})} />
+                                </div>
+                                <div className="flex justify-between items-center py-2">
+                                    <span className="font-bold text-gray-400">الإجمالي المستحق:</span>
+                                    <span className="text-3xl font-black text-yosr-green">{total} <small className="text-xs">ج.م</small></span>
+                                </div>
+                                <button onClick={sendOrder} className="w-full bg-yosr-orange text-white py-5 rounded-[2rem] font-black shadow-xl shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
+                                    <Icon name="message-circle" /> اطلب عبر واتساب الآن
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
