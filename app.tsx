@@ -52,10 +52,11 @@ export default function App() {
 
   const sendOrder = (info: any) => {
     const total = cart.reduce((a: number, b: CartItem) => a + (b.price * b.quantity), 0);
-    const msg = `📦 طلب جديد من ماركت اليسر\n👤 العميل: ${info.name}\n📍 العنوان: ${info.address}\n----------------\n` + 
+    const phone = info.phone || whatsapp;
+    const msg = `📦 طلب جديد من ماركت اليسر\n👤 العميل: ${info.name}\n📞 رقم الهاتف: ${info.phone}\n📍 العنوان: ${info.address}\n----------------\n` + 
                 cart.map((i: CartItem) => `• ${i.name} (${i.quantity} قطعة)`).join('\n') + 
                 `\n----------------\n💰 الإجمالي: ${total} ج.م`;
-    window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
     setCart([]); setIsCartOpen(false);
   };
 
@@ -246,6 +247,13 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
       {/* QR Code for WhatsApp Ordering */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm text-center">
         <h2 className="font-black text-xl mb-4 dark:text-white">رمز الطلب عبر واتساب</h2>
+        <QRCodeCanvas value={`https://wa.me/201227412513?text=مرحباً، أريد الطلب من ماركت اليسر`} size={128} />
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">امسح الرمز للطلب مباشرة</p>
+      </div>
+
+      {/* QR Code for Website */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm text-center">
+        <h2 className="font-black text-xl mb-4 dark:text-white">رمز الموقع</h2>
         <QRCodeCanvas value="https://ziad-taha1.github.io/elyossssr/" size={128} />
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">امسح الرمز للوصول إلى الموقع</p>
       </div>
@@ -254,7 +262,7 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
 }
 
 function CartDrawer({ cart, setCart, onClose, onSend }: { cart: CartItem[], setCart: (c: CartItem[]) => void, onClose: () => void, onSend: (info: any) => void }) {
-  const [info, setInfo] = useState({ name: '', address: '' });
+  const [info, setInfo] = useState({ name: '', address: '', phone: '' });
   const total = cart.reduce((a: number, b: CartItem) => a + (b.price * b.quantity), 0);
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
@@ -275,6 +283,7 @@ function CartDrawer({ cart, setCart, onClose, onSend }: { cart: CartItem[], setC
         </div>
         <div className="mt-auto pt-6 border-t space-y-3">
           <input placeholder="اسمك" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={info.name} onChange={e=>setInfo({...info, name:e.target.value})} />
+          <input placeholder="رقم الهاتف" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={info.phone} onChange={e=>setInfo({...info, phone:e.target.value})} />
           <input placeholder="العنوان" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={info.address} onChange={e=>setInfo({...info, address:e.target.value})} />
           <div className="flex justify-between font-black text-lg dark:text-white"><span>الإجمالي:</span> <span>{total} ج.م</span></div>
           <button onClick={() => onSend(info)} className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl flex items-center justify-center gap-2"><MessageCircle size={20} /> اطلب واتساب</button>
