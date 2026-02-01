@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Trash2, ShoppingCart, Lock, Store as StoreIcon, 
-  X, MessageCircle, Sun, Moon, CheckCircle2 
+  X, MessageCircle, Sun, Moon, Package, Wallet, Settings, CheckCircle2 
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
@@ -72,7 +72,7 @@ export default function App() {
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b dark:border-gray-800">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('store')}>
-            <div className={`p-2 rounded-xl ${view === 'admin' ? 'bg-amber-500' : 'bg-emerald-600'} text-white`}>
+            <div className={`p-2 rounded-xl ${view === 'admin' ? 'bg-blue-500' : 'bg-blue-600'} text-white`}>
               <StoreIcon size={20} />
             </div>
             <h1 className="font-black text-lg dark:text-white">ماركت اليسر</h1>
@@ -81,9 +81,9 @@ export default function App() {
             <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 dark:text-white">
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <button onClick={() => setIsCartOpen(true)} className="relative p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl">
+            <button onClick={() => setIsCartOpen(true)} className="relative p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl">
               <ShoppingCart size={20} />
-              {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-1.5 rounded-full">{cart.length}</span>}
+              {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] px-1.5 rounded-full">{cart.length}</span>}
             </button>
             <button onClick={() => setView(view === 'store' ? 'admin' : 'store')} className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl">
               {view === 'store' ? 'الإدارة' : 'المتجر'}
@@ -112,6 +112,13 @@ export default function App() {
 
       {/* Cart Drawer */}
       {isCartOpen && <CartDrawer cart={cart} setCart={setCart} onClose={() => setIsCartOpen(false)} onSend={sendOrder} />}
+
+      {/* Footer */}
+      <footer className="bg-gray-100 dark:bg-gray-900 py-4 mt-16">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+          Developed by Ziad Taha
+        </div>
+      </footer>
     </div>
   );
 }
@@ -124,7 +131,7 @@ function Store({ products, onAdd, whatsapp }: { products: Product[], onAdd: (p: 
     <div className="space-y-6">
       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {CATEGORIES.map(c => (
-          <button key={c} onClick={() => setCat(c)} className={`px-6 py-2 rounded-xl whitespace-nowrap text-xs font-bold ${cat === c ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 dark:text-white'}`}>{c}</button>
+          <button key={c} onClick={() => setCat(c)} className={`px-6 py-2 rounded-xl whitespace-nowrap text-xs font-bold ${cat === c ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 dark:text-white'}`}>{c}</button>
         ))}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -133,8 +140,8 @@ function Store({ products, onAdd, whatsapp }: { products: Product[], onAdd: (p: 
             <img src={p.image} className="w-full aspect-square object-cover rounded-[1.5rem] mb-3" />
             <h3 className="font-bold text-sm line-clamp-1 dark:text-white">{p.name}</h3>
             <div className="flex justify-between items-center mt-2">
-              <span className="font-black text-emerald-600">{p.price} <small className="text-[10px]">ج.م</small></span>
-              <button onClick={() => onAdd(p)} className="p-2 bg-emerald-600 text-white rounded-xl"><Plus size={16} /></button>
+              <span className="font-black text-blue-600">{p.price} <small className="text-[10px]">ج.م</small></span>
+              <button onClick={() => onAdd(p)} className="p-2 bg-blue-600 text-white rounded-xl"><Plus size={16} /></button>
             </div>
           </div>
         ))}
@@ -156,29 +163,89 @@ function Admin({ products, setProducts, onLogout }: { products: Product[], setPr
     setProducts([{ ...form, id: Date.now().toString(), price: Number(form.price), description: '', image: form.image || 'https://picsum.photos/400' }, ...products]);
     setForm({ name: '', price: '', category: 'أخرى', image: '' });
   };
+
+  const totalProducts = products.length;
+  const totalValue = products.reduce((sum, p) => sum + p.price, 0);
+  const categoriesCount = CATEGORIES.slice(1).map(cat => ({
+    name: cat,
+    count: products.filter(p => p.category === cat).length
+  }));
+
   return (
-    <div className="grid md:grid-cols-3 gap-8">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm space-y-4">
-        <h2 className="font-black flex items-center gap-2 dark:text-white"><Plus size={20} /> إضافة منتج</h2>
-        <input placeholder="اسم المنتج" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-        <input placeholder="السعر" type="number" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.price} onChange={e => setForm({...form, price: e.target.value})} />
-        <select className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <button onClick={handleAdd} className="w-full py-3 bg-amber-500 text-white font-black rounded-xl">حفظ</button>
-        <button onClick={onLogout} className="w-full text-red-500 text-xs font-bold">تسجيل خروج</button>
+    <div className="space-y-8">
+      {/* Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold">إجمالي المنتجات</h3>
+              <p className="text-3xl font-black">{totalProducts}</p>
+            </div>
+            <Package size={40} />
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold">إجمالي القيمة</h3>
+              <p className="text-3xl font-black">{totalValue} ج.م</p>
+            </div>
+            <Wallet size={40} />
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold">الفئات</h3>
+              <p className="text-3xl font-black">{categoriesCount.length}</p>
+            </div>
+            <Settings size={40} />
+          </div>
+        </div>
       </div>
-      <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm">
-        <table className="w-full text-right">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-[10px] font-black uppercase">
-            <tr><th className="p-4">المنتج</th><th className="p-4 text-center">السعر</th><th className="p-4 text-center">حذف</th></tr>
-          </thead>
-          <tbody className="divide-y dark:divide-gray-700">
-            {products.map((p: Product) => (
-              <tr key={p.id} className="dark:text-white"><td className="p-4 text-sm font-bold">{p.name}</td><td className="p-4 text-center font-black">{p.price}</td><td className="p-4 text-center"><button onClick={() => setProducts(products.filter((x: Product)=>x.id!==p.id))} className="text-red-400"><Trash2 size={18} /></button></td></tr>
-            ))}
-          </tbody>
-        </table>
+
+      {/* Categories Overview */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm">
+        <h2 className="font-black text-xl mb-4 dark:text-white">نظرة على الفئات</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {categoriesCount.map(cat => (
+            <div key={cat.name} className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+              <h4 className="font-bold dark:text-white">{cat.name}</h4>
+              <p className="text-2xl font-black text-blue-600">{cat.count}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Add Product & Product List */}
+      <div className="grid md:grid-cols-3 gap-8">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm space-y-4">
+          <h2 className="font-black flex items-center gap-2 dark:text-white"><Plus size={20} /> إضافة منتج</h2>
+          <input placeholder="اسم المنتج" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <input placeholder="السعر" type="number" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.price} onChange={e => setForm({...form, price: e.target.value})} />
+          <select className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={handleAdd} className="w-full py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition">حفظ</button>
+          <button onClick={onLogout} className="w-full text-red-500 text-xs font-bold hover:text-red-600 transition">تسجيل خروج</button>
+        </div>
+        <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-sm">
+          <table className="w-full text-right">
+            <thead className="bg-gray-50 dark:bg-gray-900 text-[10px] font-black uppercase">
+              <tr><th className="p-4">المنتج</th><th className="p-4 text-center">السعر</th><th className="p-4 text-center">الفئة</th><th className="p-4 text-center">حذف</th></tr>
+            </thead>
+            <tbody className="divide-y dark:divide-gray-700">
+              {products.map((p: Product) => (
+                <tr key={p.id} className="dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                  <td className="p-4 text-sm font-bold">{p.name}</td>
+                  <td className="p-4 text-center font-black">{p.price} ج.م</td>
+                  <td className="p-4 text-center">{p.category}</td>
+                  <td className="p-4 text-center"><button onClick={() => setProducts(products.filter((x: Product)=>x.id!==p.id))} className="text-red-400 hover:text-red-600 transition"><Trash2 size={18} /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -192,14 +259,14 @@ function CartDrawer({ cart, setCart, onClose, onSend }: { cart: CartItem[], setC
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-white dark:bg-gray-800 h-full p-8 flex flex-col shadow-2xl">
         <div className="flex justify-between items-center mb-8 border-b pb-4">
-          <h2 className="text-2xl font-black text-emerald-600">سلتك</h2>
+          <h2 className="text-2xl font-black text-blue-600">سلتك</h2>
           <button onClick={onClose}><X size={24} /></button>
         </div>
         <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar">
           {cart.map((item: CartItem) => (
             <div key={item.id} className="flex gap-4 items-center bg-gray-50 dark:bg-gray-900 p-3 rounded-2xl">
               <img src={item.image} className="w-12 h-12 rounded-lg object-cover" />
-              <div className="flex-1 font-bold text-xs dark:text-white">{item.name} <div className="text-emerald-600">{item.price} ج.م × {item.quantity}</div></div>
+              <div className="flex-1 font-bold text-xs dark:text-white">{item.name} <div className="text-blue-600">{item.price} ج.م × {item.quantity}</div></div>
               <button onClick={() => setCart(cart.filter((i: CartItem)=>i.id!==item.id))} className="text-red-300"><Trash2 size={16}/></button>
             </div>
           ))}
@@ -208,7 +275,7 @@ function CartDrawer({ cart, setCart, onClose, onSend }: { cart: CartItem[], setC
           <input placeholder="اسمك" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={info.name} onChange={e=>setInfo({...info, name:e.target.value})} />
           <input placeholder="العنوان" className="w-full p-3 rounded-xl border dark:bg-gray-900 dark:text-white" value={info.address} onChange={e=>setInfo({...info, address:e.target.value})} />
           <div className="flex justify-between font-black text-lg dark:text-white"><span>الإجمالي:</span> <span>{total} ج.م</span></div>
-          <button onClick={() => onSend(info)} className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl flex items-center justify-center gap-2"><MessageCircle size={20} /> اطلب واتساب</button>
+          <button onClick={() => onSend(info)} className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl flex items-center justify-center gap-2"><MessageCircle size={20} /> اطلب واتساب</button>
         </div>
       </div>
     </div>
